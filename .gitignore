@@ -1,2 +1,4 @@
 *.RDS
 *.txt
+./ngrams/*
+./final/*
