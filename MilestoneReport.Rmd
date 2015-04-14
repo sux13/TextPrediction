@@ -1,0 +1,153 @@
+---
+title: "Milestone Report"
+author: "Xing Su"
+date: "March 29, 2015"
+output: html_document
+---
+
+## Introduction
+
+For this milestone report, I will discuss what I have accomplished so far for the capstone project, including procedures for cleaning and exploring data, Markov models, and planned features to be implemented. Though many time during the project, I've been stomped by various issues, I've learned an enormous amount about Natural Language Processing and have enjoyed the process tremendously.
+
+
+## Cleaning Data
+
+While most of the news data is fairly regular, blog has more variability in language and symbols used, and twitter data by far has the most variation and complexity that have to be addressed before the data can be used. A series of Regular Expressions are used here to clean the data. 
+
+**Note**: I took advantage of the chaining operator `%>%` in the `dplyr` package to chain together the regular expression operations, which are all executed through various functions from the `stringi` package. 
+
+I took the following procedures to clean the data:
+
+1. Removed all characters that is not a letter, number, or common symbols
+2. Capture date data in the Gregorian Calendar format (variations of MM/DD/YYYY) and replaced with `<DATE>` tag
+3. Captured time data (variations of HH:MM:SSAM/PM) and replaced with `<TIME>` tag
+4. Captured number data (variations of $XX,XXX,XXX.XXX(%)) and replaced with `<NUM>` tag
+5. Captured phone number (variation of 1(XXX)XXX-XXXX) and replaced with `<PHONE>` tag
+6. Captured emoticons composed of various symbol, letter, and number combinations as defined [here](http://en.wikipedia.org/wiki/List_of_emoticons)
+7. Break up sentences in each observation, as defined by any text ending in !? or . 
+8. Remove all extraneous symbols after the above cleaning steps
+9. break all words in each phrase
+
+The following code is what I used to parse the data:
+
+```r
+# start function
+parse <- function (line, n=1){
+   line <- line %>%
+      # removing all irregular symbols
+      stri_replace_all(regex = "[^ a-zA-Z0-9!\"#$%&'\\()*+,-./:;<=>?@^_`{}|~\\[\\]]|\"", replacement = "") %>% 
+      # captured Dates
+      stri_replace_all(regex = " ([0-1][1-2]|[1-9])[-/]([0-3][0-9]|[1-9])([-/]([0-9]{4}|[0-9]{2}))? ", replacement = " <DATE> ") %>% 
+      # captured Time
+      stri_replace_all(regex =" [0-2]?[0-9][:-][0-6]?[0-9]([AaPpMm.]*)? ", replacement =" <TIME> ") %>% 
+      # captured numbers
+      stri_replace_all(regex =" [$]?([0-9,]+)?([0-9]+|[0-9]+[.][0-9]+|[.][0-9]+)(%|th|st|nd)? ",replacement= " <NUM> ") %>% 
+      # captured phone numbers
+      stri_replace_all(regex ="1?[-(]?[0123456789]{3}[-.)]?[0-9]{3}[-.]?[0-9]{4}|[0-9]{10}", replacement= " <PHONE> ") %>% 
+      # captured emoticon
+      stri_replace_all(regex =" [<>0O%]?[:;=8]([-o*']+)?([()dDpP/}{#@|oOcC]|\\[|\\])+|([()dDpP/}{#@|cC]|\\[|\\])+([-o*']+)?[:;=8][<>]?|<3+|</+3+|[-oO0><^][_.]+[-oO0><^]", replacement = " <EMOJI><BREAK>") %>% 
+      # break up sentences
+      stri_replace_all(regex ="[!?]+ |([ a-zA-Z0-9]{3})[.] ", replacement = "$1<BREAK>") %>%
+      # remove extraneous symbols left over
+      stri_replace_all(regex ="[^ a-zA-Z0-9#@<>]+", replacement = " ") %>% stri_trim_both() %>%
+      # split sentences into different string vectors
+      stri_split(fixed = "<BREAK>", omit_empty = T) %>%
+      # split up by word
+      lapply(function (i) stri_split_boundaries(i, type="word", skip_word_none=TRUE)) %>% 
+      # remove unnecessary list format
+      unlist(recursive = F)
+  return(line)
+}
+```
+
+## Summaries of and Observations From Data
+
+Using the processed data from above, we ahve the summary for the three sets of data below:
+
+
+|       |Line Count  | Word Count
+--------|------------|-----------
+Twitter |   2360148  |   579524
+Blog    |    899288  |   545103
+News    |   1010242  |   451206
+
+
+Comparisons for the top 10 words from all three sets of data:
+
+
+```{r fig.align = 'center', fig.height = 5, fig.width = 8, messages = F, warning = F, echo = F}
+library(grid);library(png)
+grid.raster(readPNG("comp.png"))
+```
+
+Comparisons for average sentence and word lengths from all three sets of data:
+
+```{r fig.align = 'center', fig.height = 5, fig.width = 8, messages = F, warning = F, echo = F}
+library(grid);library(png)
+grid.raster(readPNG("leng.png"))
+```
+
+**Observations**:
+
+* the word count is substantially inflated by the fact that no stemming or lemmatization have been performed on the data as of yet
+    - ***example***: you vs your, yours
+    - accounting for this will improve accuracy of the predictions as well as efficiency of the models
+* spelling and emoticons add substantial complexity and are ubiquitous especially within the Twitter data
+    - inconsistent date/time/number formats have caused huge headaches in terms of cleaning data
+    - it's nearly impossible to capture all variations of emoticon or combinations of symbols, thus 
+* the most common word in all three data sets are almost ***identical*** (i.e. determiners, prepositions, "I")
+    - this is reflective of and consistent with the way we speak and write
+* though the word count (calculated by unique word tokens found) is fairly similar between the sources, the structure of Twitter is drastically different than Blog/News
+    - this is apparent in the profile of the histograms shown bove
+- sentences tend to be much shorter on twitter than blog or news, although the average word used is of the same length
+
+
+
+
+## Planned Explorations and Modeling
+
+I am currently experimenting with different data structures to construct and build the ngram models. Because of the substantial amount of data, I am finding it a bit difficult to pinpoint an efficient way of building the prediction models. 
+
+For the ngram or otherwise known as Markov chains, we are effectively taking every consecutive group of word (i.e. groups of 2, 3, 4 etc.) and counting how many times that specific combination of words appear, and then using the probability of occurrence to predict the next word. 
+
+
+I used `data.table` package to store the ngrams constructed from all three data sources. Below is one of the functions I drafted for creating a trigram (three words, i.e. "Let me know") count table.
+
+```r
+# create empty trigram data table
+trigram <-data.table(n1 = character(0), n2 = character(0), n3 = character(0), value = numeric(0))
+# function to store 
+tri <- function(list){
+  lapply(list, function(phrase){
+      # loop through each combination of 3 words
+      for(i in 1:(length(phrase)-n+1)){
+        # convert to lower cases
+        lower <- tolower(phrase[i:(i+2)])
+        # evaluate whether the combination exist
+        if(dim(trigram[n1==lower[1] & n2 == lower[2] & n3 == lower[3]])[1]==0){
+            # if not, add it to the dictionary
+            trigram <<- rbindlist(list(trigram, list(lower[1], lower[2], lower[3], 1)))
+        } else {
+            # if it already exists, increment the count by 1 
+            trigram[n1==lower[1]&n2==lower[2]&n3==lower[3]]$value <<- trigram[n1==lower[1]&n2==lower[2]&n3==lower[3]]$value + 1
+        }
+      }
+    })
+}
+```
+
+
+**Planned Explorations**:
+
+* adding classifiers for parts of speech (pronouns, verb, noun, etc) to be used in text prediction
+    - effectively adds another layer of filtering so we can achieve better predictions
+* smoothing/backoff techniques to address predictions on word combinations not in the model we constructed
+    - many words that we will be predicting on won't be included in the corpus we train the model on
+* implementing profanity filtering
+    - I chose to leave this off until the very end of the project, as I believe it is still important for the algorithm to build the prediction from ALL of the data
+    - the profanity will simply be right before the predictions are provided to the user on the front-end interface
+* optimizing data structure and algorithm
+    - currently the processing time for building the ngram model is about 10 to 15 minutes and requires a few hundred MBs of RAM
+    - I aim to significantly reduce the overhead by removing extraneous data and experimenting with internal workings of the functions I use
+* test scalability and performance
+    - implement measures of perplexity for the models and optimize performance such that it operates fast and efficiently on Shinyapps.io
