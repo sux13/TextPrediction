@@ -1,4 +1,4 @@
-library(stringi); library(data.table); library(tau)
+library(stringi); library(data.table)
 options("scipen"=100, "digits"=4)
 # setwd("~/Documents/Capstone")
 
@@ -18,7 +18,9 @@ clean <- function(corpus){
     cleaned <- stri_replace_all(cleaned, regex = "\\b(i'm|im)\\b", replacement = "i am")
     # cleaned <- stri_replace_all(cleaned, regex = "\\b(isnt)\\b", replacement = "is not")
     cleaned <- stri_replace_all(cleaned, regex = "\\b(he|she|it|how|that|there|what|when|who|why|where)'?s\\b", replacement = "$1 is")
-    # cleaned <- stri_replace_all(cleaned, regex = "\\b(u|ur|i|me|my|myself|we|our|ours|ourselves|you|your|yours|yourself|yourselves|he|him|his|himself|she|her|hers|herself|it|its|itself|they|them|their|theirs|themselves|us)\\b|^(u|ur|i|me|my|myself|we|our|ours|ourselves|you|your|yours|yourself|yourselves|he|him|his|himself|she|her|hers|herself|it|its|itself|they|them|their|theirs|themselves|us)\\b|\\b(u|ur|i|me|my|myself|we|our|ours|ourselves|you|your|yours|yourself|yourselves|he|him|his|himself|she|her|hers|herself|it|its|itself|they|them|their|theirs|themselves|us)$", replacement = "<pronoun>")
+    cleaned <- stri_replace_all(cleaned, regex = "\\bu\\b", replacement = "you")
+    cleaned <- stri_replace_all(cleaned, regex = "\\bur\\b", replacement = "your")
+    cleaned <- stri_replace_all(cleaned, regex = "\\b(u|ur|i|me|my|myself|we|our|ours|ourselves|you|your|yours|yourself|yourselves|he|him|his|himself|she|her|hers|herself|it|its|itself|they|them|their|theirs|themselves|us)\\b|^(u|ur|i|me|my|myself|we|our|ours|ourselves|you|your|yours|yourself|yourselves|he|him|his|himself|she|her|hers|herself|it|its|itself|they|them|their|theirs|themselves|us)\\b|\\b(u|ur|i|me|my|myself|we|our|ours|ourselves|you|your|yours|yourself|yourselves|he|him|his|himself|she|her|hers|herself|it|its|itself|they|them|their|theirs|themselves|us)$", replacement = "<pronoun>")
     # cleaned <- stri_replace_all(cleaned, regex = "\\b(am|is|are|was|were|be|been|being|will be)\\b", replacement = "<be>")
     # cleaned <- stri_replace_all(cleaned, regex = "\\b(have|has|had|having)\\b", replacement = "<have>")
     # cleaned <- stri_replace_all(cleaned, regex = "\\b(do|does|did|doing)\\b", replacement = "<do>")
@@ -131,81 +133,80 @@ combine <- function(ngram, k = 10){
 
 
 # divide the data source and split into different files
-k = 10
-#unlink("ngrams", recursive=T)
-if(divide.conquer(cleaned, k)){
-    # rm(unigram, bigram, trigram, fourgram); gc()
-    print("loading and merging unigrams...")
-    unigram <- rbindlist(combine("unigram", k))
-    unigram <- unigram[, sum(N), by = "word"]
-    setnames(unigram, "V1", "N")
-    # unigram[, p:=N/sum(N)]
-    # setorder(unigram, -N)
-    setkey(unigram, word)
-    print("loading and merging bigrams...")
-    bigram <- rbindlist(combine("bigram", k))
-    bigram <- bigram[, sum(N), by = "word1,word2"]
-    setnames(bigram, "V1", "N")
-    # bigram[, p:=N/sum(N)]
-    # setorder(bigram, -N)
-    setkey(bigram, word1)
-    print("loading and merging trigrams...")
-    trigram <- rbindlist(combine("trigram", k))
-    trigram <- trigram[, sum(N), by = "word1,word2,word3"]
-    setnames(trigram, "V1", "N")
-    # trigram[, p:=N/sum(N)]
-    # setorder(trigram, -N)
-    setkey(trigram, word1, word2)
-    print("loading and merging fourgrams...")
-    fourgram <- rbindlist(combine("fourgram", k))
-    fourgram <- fourgram[, sum(N), by = "word1,word2,word3,word4"]
-    setnames(fourgram, "V1", "N")
-    # fourgram[, p:=N/sum(N)]
-    # setorder(fourgram, -N)
-    setkey(fourgram, word1, word2, word3)
-    print("DONE")
-}
+# k = 100
+# #unlink("ngrams", recursive=T)
+# if(divide.conquer(cleaned, k)){
+#     # rm(unigram, bigram, trigram, fourgram); gc()
+#     print("loading and merging unigrams...")
+#     unigram <- rbindlist(combine("unigram", k))
+#     unigram <- unigram[, sum(N), by = "word"]
+#     setnames(unigram, "V1", "N")
+#     # unigram[, p:=N/sum(N)]
+#     # setorder(unigram, -N)
+#     setkey(unigram, word)
+#     print("loading and merging bigrams...")
+#     bigram <- rbindlist(combine("bigram", k))
+#     bigram <- bigram[, sum(N), by = "word1,word2"]
+#     setnames(bigram, "V1", "N")
+#     # bigram[, p:=N/sum(N)]
+#     # setorder(bigram, -N)
+#     setkey(bigram, word1)
+#     print("loading and merging trigrams...")
+#     trigram <- rbindlist(combine("trigram", k))
+#     trigram <- trigram[, sum(N), by = "word1,word2,word3"]
+#     setnames(trigram, "V1", "N")
+#     # trigram[, p:=N/sum(N)]
+#     # setorder(trigram, -N)
+#     setkey(trigram, word1, word2)
+#     print("loading and merging fourgrams...")
+#     fourgram <- rbindlist(combine("fourgram", k))
+#     fourgram <- fourgram[, sum(N), by = "word1,word2,word3,word4"]
+#     setnames(fourgram, "V1", "N")
+#     # fourgram[, p:=N/sum(N)]
+#     # setorder(fourgram, -N)
+#     setkey(fourgram, word1, word2, word3)
+#     print("DONE")
+# }
 
-unigram[N==1, word:="<unk>"]
-unigram <- unigram[, sum(N), by = "word"]
+# unlink("finalngrams", recursive = T)
+# dir.create("finalngrams")
+# saveRDS(unigram, "finalngrams//unigram.Rds")
+# saveRDS(bigram, "finalngrams//bigram.Rds")
+# saveRDS(trigram, "finalngrams//trigram.Rds")
+# saveRDS(fourgram, "finalngrams//fourgram.Rds")
+
+
+# unigram[N==1, word:="<unk>"]
+# unigram <- unigram[, sum(N), by = "word"]
+# setkey(unigram, word)
+# bigram[!(word1 %in% unigram$word), word1:="<unk>"]
+# bigram[!(word2 %in% unigram$word), word2:="<unk>"]
+# bigram <- bigram[, sum(N), by="word1,word2"]
+# setkey(bigram, word1, word2)
+
+# trigram[!(word1 %in% unigram$word), word1:="<unk>"]
+# trigram[!(word2 %in% unigram$word), word2:="<unk>"]
+# trigram[!(word3 %in% unigram$word), word3:="<unk>"]
+# trigram <- trigram[, sum(N), by = "word1,word2,word3"]
+# setkey(trigram, word1, word2, word3)
+
+# fourgram[!(word1 %in% unigram$word), word1:="<unk>"]
+# fourgram[!(word2 %in% unigram$word), word2:="<unk>"]
+# fourgram[!(word3 %in% unigram$word), word3:="<unk>"]
+# fourgram[!(word4 %in% unigram$word), word4:="<unk>"]
+# fourgram <- fourgram[, sum(N), by = "word1,word2,word3,word4"]
+# setkey(fourgram, word1, word2, word3, word4)
+
 # setnames(unigram, "V1", "N")
-# unigram[, p:=N/sum(N)]
-# setorder(unigram, -N)
-setkey(unigram, word)
-bigram[!(word1 %in% unigram$word), word1:="<unk>"]
-bigram[!(word2 %in% unigram$word), word2:="<unk>"]
-bigram <- bigram[, sum(N), by="word1,word2"]
-setkey(bigram, word1, word2)
+# setnames(bigram, "V1", "N")
+# setnames(trigram, "V1", "N")
+# setnames(fourgram, "V1", "N")
 
-trigram[!(word1 %in% unigram$word), word1:="<unk>"]
-trigram[!(word2 %in% unigram$word), word2:="<unk>"]
-trigram[!(word3 %in% unigram$word), word3:="<unk>"]
-trigram <- trigram[, sum(N), by = "word1,word2,word3"]
-setkey(trigram, word1, word2, word3)
-
-fourgram[!(word1 %in% unigram$word), word1:="<unk>"]
-fourgram[!(word2 %in% unigram$word), word2:="<unk>"]
-fourgram[!(word3 %in% unigram$word), word3:="<unk>"]
-fourgram[!(word4 %in% unigram$word), word4:="<unk>"]
-fourgram <- fourgram[, sum(N), by = "word1,word2,word3,word4"]
-setkey(fourgram, word1, word2, word3, word4)
-
-setnames(unigram, "V1", "N")
-setnames(bigram, "V1", "N")
-setnames(trigram, "V1", "N")
-setnames(fourgram, "V1", "N")
-
-bigram <- bigram[N!=1]
-trigram <- trigram[N!=1]
-fourgram <- fourgram[N!=1]
+# bigram <- bigram[N!=1]
+# trigram <- trigram[N!=1]
+# fourgram <- fourgram[N!=1]
 
 
-# unlink("/Volumes//Documents, Files, & Media/Coursera/finalngrams", recursive = T)
-# dir.create("/Volumes//Documents, Files, & Media/Coursera/finalngrams")
-# saveRDS(unigram, "/Volumes//Documents, Files, & Media/Coursera/finalngrams//unigram.Rds")
-# saveRDS(bigram, "/Volumes//Documents, Files, & Media/Coursera/finalngrams//bigram.Rds")
-# saveRDS(trigram, "/Volumes//Documents, Files, & Media/Coursera/finalngrams//trigram.Rds")
-# saveRDS(fourgram, "/Volumes//Documents, Files, & Media/Coursera/finalngrams//fourgram.Rds")
 
 
 # unigram <- readRDS("/Volumes//Documents, Files, & Media/Coursera/finalngrams//unigram.Rds")
@@ -257,6 +258,30 @@ predict <- function(phrase, k=3){
     return(result[!is.na(result)][1:k])
 }
 
+predict.interpolate <- function(phrase, k=3){
+    # phrase <<- parse(clean(input))
+    phrase <- replaceUnknown(phrase)
+    j <- length(phrase)
+    # print(c(phrase))
+    if(j == 1){
+        result <- c("bigram" = bigram[phrase[j], nomatch=0][order(-p)]$word2[1:k],
+                    "unigram" =unigram[order(-p)]$word[2:(k+1)])
+    }else if (j == 2){
+        result <- c("trigram" = trigram[J(phrase[j-1], phrase[j]), nomatch=0][order(-p)]$word3[1:k],
+                    "bigram" = bigram[phrase[j], nomatch=0][order(-p)]$word2[1:k],
+                    "unigram" =unigram[order(-p)]$word[2:(k+1)])
+    }else {
+        result <- c("fourgram" =fourgram[J(phrase[j-2], phrase[j-1], phrase[j]), nomatch=0][order(-p)]$word4[1:k],
+                    "trigram" = trigram[J(phrase[j-1], phrase[j]), nomatch=0][order(-p)]$word3[1:k],
+                    "bigram" = bigram[phrase[j], nomatch=0][order(-p)]$word2[1:k],
+                    "unigram" =unigram[order(-p)]$word[2:(k+1)])
+    }
+    return(result[!is.na(result)][1:k])
+}
+
+
+
+
 # predict.three <- function(phrase, k=3){
 #     # phrase <<- parse(clean(input))
 #     # phrase <- unlist(strsplit(input, " "))
@@ -284,7 +309,23 @@ test <- function(raw){
             predicted <- predict(processed[1:j])
             correct <-{if(processed[j+1] %in% predicted) TRUE else FALSE}
             results <- rbindlist(list(results, as.list(c(processed[j+1], predicted,  correct))))
+        }
+    }
+    return(results)
 
+}
+
+test.interpolate <- function(raw){
+    # results <- data.table()
+    results <- data.table(actual = character(0), predicted1 = character(0),
+        predicted2 = character(0), predicted3 = character(0), correct = logical(0))
+    for(i in 1:length(raw)){
+        processed <- parse(raw[i])
+        for(j in 1:(length(processed)-1)){
+            # print(processed[1:j])
+            predicted <- predict.interpolate(processed[1:j])
+            correct <-{if(processed[j+1] %in% predicted) TRUE else FALSE}
+            results <- rbindlist(list(results, as.list(c(processed[j+1], predicted,  correct))))
         }
     }
     return(results)
@@ -324,7 +365,22 @@ test.one <- function(raw){
     return(results)
 
 }
+test.one.interpolate <- function(raw){
+    # results <- data.table()
+    results <- data.table(actual = character(0), predicted1 = character(0), correct = logical(0))
+    for(i in 1:length(raw)){
+        processed <- parse(raw[i])
+        for(j in 1:(length(processed)-1)){
+            # print(processed[1:j])
+            predicted <- predict.interpolate(processed[1:j], 1)
+            correct <-{if(processed[j+1] %in% predicted) TRUE else FALSE}
+            results <- rbindlist(list(results, as.list(c(processed[j+1], predicted, correct))))
 
+        }
+    }
+    return(results)
+
+}
 
 interpolate <- function(phrase){
     j <- length(phrase)
@@ -334,17 +390,93 @@ interpolate <- function(phrase){
     uniN <- unigram[phrase[j]]$N
 
     # fourN/triN + triN/biN + biN/uniN + uniN/nrow(unigram)
-    print(fourN)
-    print(triN)
-    print(biN)
-    print(uniN)
+    # print(fourN)
+    # print(triN)
+    # print(biN)
+    # print(uniN)
     result <- c("fourgram" = fourN/triN,
                "trigram" = triN/biN,
                "bigram" = biN/uniN,
                "unigram" = uniN/sum(unigram$N))
-    
+    result[is.na(result)] <- 0
     return(result)
 }
+
+interpolate.sum <- function(uniN, biN, triN, fourN){
+    return(sum(0.1155*fourN/triN, 0.2364*triN/biN, 0.3757*biN/uniN, 0.2724*uniN/sum(unigram$N), na.rm = T))
+}
+
+unigram.interpolate <- function(N){
+    uniN <- N
+    biN <- NA
+    triN <- NA
+    fourN <- NA
+    return(interpolate.sum(uniN, biN, triN, fourN))
+}
+
+unigram[, p := unigram.interpolate(N=N), by = "word"]
+
+
+bigram.interpolate <- function(w2, N){
+    uniN <- unigram[w2]$N
+    biN <- N
+    triN <- NA
+    fourN <- NA
+    return(interpolate.sum(uniN, biN, triN, fourN))
+}
+bigram[, p := bigram.interpolate(w2 = word2, N=N), by = "word1,word2"]
+
+
+trigram.interpolate <- function(w2, w3, N){
+    fourN <- NA
+    triN <- N
+    biN <- bigram[J(w2, w3)]$N
+    uniN <- unigram[w3]$N
+    return(interpolate.sum(uniN, biN, triN, fourN))
+}
+
+trigram[, p := trigram.interpolate(w2 = word2, w3 = word3, N=N), by = "word1,word2,word3"]
+
+fourgram.interpolate <- function(w2, w3, w4,  N){
+    fourN <- N
+    triN <- trigram[J(w2, w3, w4)]$N
+    biN <- bigram[J(w3, w4)]$N
+    uniN <- unigram[w4]$N
+    return(interpolate.sum(uniN, biN, triN, fourN))
+}
+
+t[, p := fourgram.interpolate(w2 = word2, w3 = word3, w4 = word4, N=N), by = "word1,word2,word3,word4"]
+
+
+# 0.1155 0.2364 0.3757 0.2724
+
+eval_f <- function(lambda){
+
+    # l1 <- lambda[1]
+    # l2 <- lambda[2]
+    # l3 <- lambda[3]
+    # l4 <- lambda[4]
+
+    p <- apply(data, 1, function(i){
+        i*lambda
+    })
+    # print(p)
+    p <- apply(p, 2, sum)
+    return(sum(log(p)))
+}
+
+
+x0 <- c(0.25, 0.25, 0.25, 0.25)
+lb <- c(0, 0, 0, 0)
+eval_g_eq <- function(lambda) {
+    return(sum(lambda)-1)
+}
+
+
+# r <- t(apply(corpus[1:500], 1, function(i) lp("max", interpolate(unlist(i)), l.con, l.dir, l.rhs)$solution))
+
+
+
 # ## Prediction
 # predict.word <- function(input, k=3){
 #     phrase <<- c("<s>", unlist(stri_split(clean(input), regex = "[[:space:]]+", omit_empty = T)))
@@ -368,6 +500,8 @@ interpolate <- function(phrase){
 
 #     return(result)
 # }
+
+
 
 
 
