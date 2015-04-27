@@ -89,7 +89,6 @@ tri <- function(list){
 
 
 # combine
-
 unigram1 <- readRDS("ngrams/unigram1.Rds")
 bigram1 <- readRDS("ngrams/bigram1.Rds")
 trigram1 <- readRDS("ngrams/trigram1.Rds")

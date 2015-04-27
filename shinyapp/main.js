@@ -15,10 +15,11 @@ $(function() {
       }));
     });
   }
- 
+
   Shiny.addCustomMessageHandler("myCallbackHandler", function(value) {
     console.log(value);
     bh.add(value);
+    $('#text').trigger('change');
   });
 
   $('#text').typeahead({

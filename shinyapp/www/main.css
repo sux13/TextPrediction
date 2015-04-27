@@ -6750,7 +6750,7 @@ a.list-group-item-danger.active:focus {
   color: #333333;
 }
 
-/*==================================*/
+/*===========Added by Xing=======================*/
 
 
 .shiny-input-container:not(.shiny-input-container-inline) {
@@ -6765,15 +6765,21 @@ a.list-group-item-danger.active:focus {
   text-align: left;
 }
 
+
+
 #prediction, #autocomplete {
-  height: 32px;
-  padding: 5px 0;
+/*  height: 32px;
+*/padding: 5px 0;
   width: 50px;
   margin-left: 20px;
   display: inline-block;
   vertical-align: middle;
   font-weight: 700;
 
+}
+
+#prediction {
+  width: 1px;
 }
 
 #autocomplete{
